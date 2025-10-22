@@ -23,9 +23,13 @@ class Asusctl < Formula
   def install
     ENV.prepend_path "PKG_CONFIG_PATH", Formula["libgudev"].opt_lib/"pkgconfig"
     ENV.prepend_path "PKG_CONFIG_PATH", Formula["systemd"].opt_lib/"pkgconfig"
+    ENV["RUSTFLAGS"] = "-Clink-arg=-Wl,-z,relro,-z,now"
 
     # Set up libclang for bindgen
     ENV["LIBCLANG_PATH"] = Formula["llvm"].opt_lib.to_s
+
+    modified_file = File.read("asusd/src/lib.rs").gsub!("/etc/asusd", "#{etc}/asusd")
+    File.write("asusd/src/lib.rs", modified_file)
 
     # Install specific workspace members
     system "cargo", "install", "--path", "asusctl", "--root", prefix, "--locked"
