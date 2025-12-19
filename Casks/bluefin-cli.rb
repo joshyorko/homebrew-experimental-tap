@@ -14,9 +14,11 @@ cask "bluefin-cli" do
 
   on_macos do
     on_intel do 
-      sha256 fcfd4bcf9723ad03b9fe1591da286242cf7651ea7b9f7c20f5ec087201cf3815
+      sha256 "fcfd4bcf9723ad03b9fe1591da286242cf7651ea7b9f7c20f5ec087201cf3815"
+    end
     on_arm do
-      sha256 c930feab1acd0fb6bfc632356acb54f56428ee980455f2e358e79f9880a8dca7
+      sha256 "c930feab1acd0fb6bfc632356acb54f56428ee980455f2e358e79f9880a8dca7"
+    end
   end
 
   url "https://github.com/hanthor/bluefin-cli/releases/download/v#{version}/bluefin-cli_#{version}_#{os_map[Homebrew::SimulateSystem.current_os]}#{arch}.tar.gz"
