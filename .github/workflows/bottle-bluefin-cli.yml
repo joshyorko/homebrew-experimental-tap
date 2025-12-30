@@ -85,7 +85,7 @@ jobs:
       - name: Create PR for formula update
         id: create-pr
         if: steps.check.outputs.needs_update == 'true'
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
         with:
           branch: ${{ steps.set-branch.outputs.branch }}
           base: main
@@ -148,7 +148,7 @@ jobs:
           done
 
       - name: Upload bottle artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
            name: bottle
            path: '*.bottle.*'
@@ -171,7 +171,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download all bottles
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: bottle
           path: .
@@ -183,7 +183,7 @@ jobs:
           brew bottle --merge --write --no-commit ./*.bottle.json
 
       - name: Commit bottle updates
-        uses: EndBug/add-and-commit@v9
+        uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
         with:
           message: 'chore: add bluefin-cli bottles for ${{ needs.update-formula.outputs.version }}'
 
@@ -199,7 +199,7 @@ jobs:
           ref: ${{ needs.update-formula.outputs.working-branch }}
 
       - name: Download all bottles
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: bottle
           path: .
