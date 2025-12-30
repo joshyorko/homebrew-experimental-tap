@@ -24,6 +24,10 @@ cask "docker-rootless-linux" do
   binary "docker/dockerd"
   binary "docker/docker-init"
   binary "docker/docker-proxy"
+  binary "docker/containerd"
+  binary "docker/containerd-shim-runc-v2"
+  binary "docker/ctr"
+  binary "docker/runc"
   # Docker rootless extras
   binary "docker-rootless-extras/dockerd-rootless.sh", target: "dockerd-rootless"
   binary "docker-rootless-extras/rootlesskit"
@@ -88,14 +92,26 @@ cask "docker-rootless-linux" do
     ohai "Systemd service created at #{service_file}"
     ohai "Run 'systemctl --user daemon-reload' to load the service"
     ohai "Then enable and start with: systemctl --user enable --now dockerd-rootless"
+
+    ohai "Configuring docker context..."
+    docker_cli = "#{HOMEBREW_PREFIX}/bin/docker"
+    context_create_cmd = "#{docker_cli} context create rootless --docker host=unix:///run/user/#{Process.uid}/docker.sock"
+    system_command "sh", args: ["-c", "#{docker_cli} context inspect rootless >/dev/null 2>&1 || #{context_create_cmd}"]
+    system_command docker_cli, args: ["context", "use", "rootless"]
   end
 
   # Does not seem work...
   zap trash: "~/.config/systemd/user/dockerd-rootless.service"
 
   caveats <<~EOS
-    Use 'dockerd-rootless --no-iptables' to start
+    Use 'dockerd-rootless --iptables=false' to start
 
-    export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+    To enable and start the systemd service:
+      systemctl --user daemon-reload
+      systemctl --user enable --now dockerd-rootless
+
+    A "rootless" docker context has been created and selected.
+    To switch back to the default context:
+      docker context use default
   EOS
 end
