@@ -15,6 +15,8 @@ class LibvirtFull < Formula
     sha256 x86_64_linux: "8cbd53c67b20a32b295d02cfd8c08fc9d17834fa712baec2ae1538ea2136922f"
   end
 
+  env :std
+
   depends_on "docutils" => :build
   depends_on "gettext" => :build
   depends_on "meson" => :build
@@ -24,8 +26,10 @@ class LibvirtFull < Formula
   depends_on "curl"
   depends_on "cyrus-sasl"
   depends_on "glib"
+  depends_on "glibc"
   depends_on "gnutls"
   depends_on "gperf"
+  depends_on "icu4c"
   depends_on "json-c"
   depends_on "libiscsi"
   depends_on "libnl"
