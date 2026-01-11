@@ -14,8 +14,8 @@ class LinuxMcpServer < Formula
 
   bottle do
     root_url "https://github.com/ublue-os/homebrew-experimental-tap/releases/download/linux-mcp-server-1.0.1"
-    sha256 cellar: :any,                 arm64_sequoia: "80050b7683686ad1a311d7cb86e6ecc98b0a944069f2e9fada86d006fd37f7a5"
-    sha256 cellar: :any_skip_relocation, x86_64_linux:  "348c3040ff956e68833d317580b006a4476f3524e2dfac884800641588214807"
+    sha256 cellar: :any,                 arm64_sequoia: "e40aed2bfc2ed4533f9c5a6787414451db8e0f882cf4a3672a706f2df10f3f28"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:  "e9d94f3bb1a26ff2d0a5ad582563638b2d2cc071bc5ccebb83e9cc59239f7b59"
   end
 
   depends_on "rust" => :build
