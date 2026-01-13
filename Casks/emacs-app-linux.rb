@@ -1,40 +1,191 @@
 cask "emacs-app-linux" do
-  arch arm: "arm64-11", intel: "x86_64-10_12"
+  arch arm: "arm64", intel: "amd64"
 
-  version "30.2-1"
-  sha256 "72b31176903a68a7b82093a94fedd51eda7ecbb3c54eae21a9160cedc88fab1f"
+  version "30.2-18"
+  sha256 arm64_linux:  "d2471179e3a7691148a585c04c573a9dc95ee26b448624f4a8131d73c2234698",
+         x86_64_linux: "2d3d1c145fe8f0edf51f1275c5109eee116f98e2899498ca710ab96858fa0a70"
 
-  url "https://emacsformacosx.com/emacs-builds/Emacs-#{version}-universal.dmg"
-  name "Emacs"
-  desc "Text editor"
-  homepage "https://emacsformacosx.com/"
+  url "https://github.com/daegalus/linux-app-builds/releases/download/emacs-pgtk-#{version}/emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}.tar.gz",
+      verified: "github.com/daegalus/linux-app-builds/"
+  name "Emacs PGTK"
+  desc "Text editor with PGTK support (Native Wayland and X11)"
+  homepage "https://github.com/daegalus/linux-app-builds"
 
   livecheck do
-    url "https://emacsformacosx.com/atom/release"
-    regex(%r{href=.*?/Emacs[._-]v?(\d+(?:\.\d+)*(?:-\d+)?)[._-]universal\.dmg}i)
+    url :url
+    regex(/^emacs-pgtk[._-]v?(\d+(?:\.\d+)+-\d+)$/i)
   end
 
-  auto_updates true
-  conflicts_with cask: [
-    "emacs@nightly",
-    "emacs@pretest",
-  ]
+  depends_on formula: "libgccjit"
+  depends_on formula: "tree-sitter@0.25"
 
-  app "Emacs.app"
-  binary "#{appdir}/Emacs.app/Contents/MacOS/Emacs", target: "emacs"
-  binary "#{appdir}/Emacs.app/Contents/MacOS/bin-#{arch}/ctags"
-  binary "#{appdir}/Emacs.app/Contents/MacOS/bin-#{arch}/ebrowse"
-  binary "#{appdir}/Emacs.app/Contents/MacOS/bin-#{arch}/emacsclient"
-  binary "#{appdir}/Emacs.app/Contents/MacOS/bin-#{arch}/etags"
-  manpage "#{appdir}/Emacs.app/Contents/Resources/man/man1/ctags.1.gz"
-  manpage "#{appdir}/Emacs.app/Contents/Resources/man/man1/ebrowse.1.gz"
-  manpage "#{appdir}/Emacs.app/Contents/Resources/man/man1/emacs.1.gz"
-  manpage "#{appdir}/Emacs.app/Contents/Resources/man/man1/emacsclient.1.gz"
-  manpage "#{appdir}/Emacs.app/Contents/Resources/man/man1/etags.1.gz"
+  # Binaries
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/run-emacs.sh", target: "emacs"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/emacs-#{version.split("-").first}", target: "emacs-#{version.split("-").first}"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/emacsclient"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/ctags"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/ebrowse"
+  binary "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/bin/etags"
+  # Man pages
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/ctags.1.gz"
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/ebrowse.1.gz"
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/emacs.1.gz"
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/emacsclient.1.gz"
+  manpage "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share/man/man1/etags.1.gz"
+  # Libraries (needed for emacs to run)
+  artifact "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/lib",
+           target: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux/lib"
+  # Share directory (elisp, icons, schemas, man pages, etc.)
+  artifact "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/share",
+           target: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux/share"
+  # Libexec (helper binaries and compiled modules)
+  artifact "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/libexec",
+           target: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux/libexec"
 
-  zap trash: [
-    "~/Library/Caches/org.gnu.Emacs",
-    "~/Library/Preferences/org.gnu.Emacs.plist",
-    "~/Library/Saved Application State/org.gnu.Emacs.savedState",
-  ]
+  preflight do
+    # Make run-emacs.sh executable
+    FileUtils.chmod "+x", "#{staged_path}/emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/run-emacs.sh"
+
+    # Update the run-emacs.sh script to include all necessary Homebrew library paths
+    script_path = "#{staged_path}/emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/run-emacs.sh"
+    content = File.read(script_path)
+
+    # Add tree-sitter and libgccjit paths after the Homebrew lib path check
+    homebrew_paths = <<~PATHS
+      # Add Homebrew paths if they exist (for systems like immutable distros)
+      if [ -d "/home/linuxbrew/.linuxbrew/lib" ]; then
+        export LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/lib:$LD_LIBRARY_PATH"
+      fi
+      # Add libgccjit (required for native compilation)
+      if [ -d "/home/linuxbrew/.linuxbrew/opt/libgccjit/lib/gcc/current" ]; then
+        export LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/opt/libgccjit/lib/gcc/current:$LD_LIBRARY_PATH"
+      fi
+      # Add tree-sitter@0.25 (keg-only)
+      if [ -d "/home/linuxbrew/.linuxbrew/opt/tree-sitter@0.25/lib" ]; then
+        export LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/opt/tree-sitter@0.25/lib:$LD_LIBRARY_PATH"
+      fi
+    PATHS
+
+    content.gsub!(
+      %r{# Add Homebrew paths.*?\n  export LD_LIBRARY_PATH="/home/linuxbrew/\.linuxbrew/lib:\$LD_LIBRARY_PATH"\nfi}m,
+      homebrew_paths.strip,
+    )
+
+    # Add Emacs data directory environment variables after the GSETTINGS_SCHEMA_DIR line
+    emacs_version = version.split("-").first
+    # ARM64 uses aarch64-unknown-linux-gnu, x86_64 uses x86_64-pc-linux-gnu
+    target_triplet = on_arch_conditional arm: "aarch64-unknown-linux-gnu", intel: "x86_64-pc-linux-gnu"
+    emacs_env_vars = <<~ENVVARS
+      export GSETTINGS_SCHEMA_DIR="$SCRIPT_DIR/share/glib-2.0/schemas"
+
+      # Set Emacs data directories (use Homebrew opt path when symlinked)
+      if [ -d "/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}" ]; then
+        export EMACSDATA="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}/etc"
+        export EMACSPATH="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/libexec/emacs/#{emacs_version}/#{target_triplet}"
+        export EMACSDOC="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}/etc"
+        export EMACSLOADPATH="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}/lisp"
+      else
+        export EMACSDATA="$SCRIPT_DIR/share/emacs/#{emacs_version}/etc"
+        export EMACSPATH="$SCRIPT_DIR/bin"
+        export EMACSDOC="$SCRIPT_DIR/share/emacs/#{emacs_version}/etc"
+        export EMACSLOADPATH="$SCRIPT_DIR/share/emacs/#{emacs_version}/lisp"
+      fi
+    ENVVARS
+
+    content.gsub!(
+      'export GSETTINGS_SCHEMA_DIR="$SCRIPT_DIR/share/glib-2.0/schemas"',
+      emacs_env_vars.strip,
+    )
+
+    File.write(script_path, content)
+  end
+
+  postflight do
+    # Create necessary directories
+    FileUtils.mkdir_p "#{Dir.home}/.local/share/applications"
+    FileUtils.mkdir_p "#{Dir.home}/.local/share/icons/hicolor"
+    FileUtils.mkdir_p "#{Dir.home}/.local/share/glib-2.0/schemas"
+
+    emacs_root = "#{HOMEBREW_PREFIX}/opt/emacs-app-linux"
+
+    # Copy compiled gschemas
+    if File.exist?("#{emacs_root}/share/glib-2.0/schemas/gschemas.compiled")
+      FileUtils.cp(
+        "#{emacs_root}/share/glib-2.0/schemas/gschemas.compiled",
+        "#{Dir.home}/.local/share/glib-2.0/schemas/",
+      )
+      FileUtils.cp(
+        "#{emacs_root}/share/glib-2.0/schemas/org.gnu.emacs.defaults.gschema.xml",
+        "#{Dir.home}/.local/share/glib-2.0/schemas/",
+      )
+    end
+
+    # Copy icons to user directory
+    icon_sizes = %w[16x16 24x24 32x32 48x48 128x128 scalable]
+    icon_sizes.each do |size|
+      src_icon = "#{emacs_root}/share/icons/hicolor/#{size}/apps/emacs.png"
+      src_icon = "#{emacs_root}/share/icons/hicolor/#{size}/apps/emacs.svg" if size == "scalable"
+
+      if File.exist?(src_icon)
+        FileUtils.mkdir_p "#{Dir.home}/.local/share/icons/hicolor/#{size}/apps"
+        FileUtils.cp(src_icon, "#{Dir.home}/.local/share/icons/hicolor/#{size}/apps/")
+      end
+    end
+
+    # Update icon cache if available
+    if system("which gtk-update-icon-cache > /dev/null 2>&1")
+      system "gtk-update-icon-cache", "#{Dir.home}/.local/share/icons/hicolor", "-f",
+             "-t"
+    end
+
+    # Install desktop files with corrected Exec paths
+    desktop_files = %w[emacs emacsclient emacs-mail emacsclient-mail]
+    desktop_files.each do |desktop_name|
+      src_desktop = "#{emacs_root}/share/applications/#{desktop_name}.desktop"
+      next unless File.exist?(src_desktop)
+
+      desktop_content = File.read(src_desktop)
+      # Fix Exec paths to use homebrew bin directory
+      desktop_content.gsub!("Exec=emacs", "Exec=#{HOMEBREW_PREFIX}/bin/emacs")
+      desktop_content.gsub!(%r{Exec=/usr/local/bin/emacs}, "Exec=#{HOMEBREW_PREFIX}/bin/emacs")
+      desktop_content.gsub!(%r{Exec=/usr/local/bin/emacsclient}, "Exec=#{HOMEBREW_PREFIX}/bin/emacsclient")
+      desktop_content.gsub!("Exec=emacsclient", "Exec=#{HOMEBREW_PREFIX}/bin/emacsclient")
+
+      File.write("#{Dir.home}/.local/share/applications/#{desktop_name}.desktop", desktop_content)
+    end
+
+    # Update desktop database if available
+    if system("which update-desktop-database > /dev/null 2>&1")
+      system "update-desktop-database",
+             "#{Dir.home}/.local/share/applications"
+    end
+  end
+
+  uninstall_postflight do
+    # Clean up desktop files
+    %w[emacs emacsclient emacs-mail emacsclient-mail].each do |desktop_name|
+      FileUtils.rm("#{Dir.home}/.local/share/applications/#{desktop_name}.desktop")
+    end
+
+    # Clean up icons
+    icon_sizes = %w[16x16 24x24 32x32 48x48 128x128 scalable]
+    icon_sizes.each do |size|
+      icon_ext = (size == "scalable") ? "svg" : "png"
+      FileUtils.rm("#{Dir.home}/.local/share/icons/hicolor/#{size}/apps/emacs.#{icon_ext}")
+    end
+
+    # Clean up gschemas
+    FileUtils.rm("#{Dir.home}/.local/share/glib-2.0/schemas/gschemas.compiled")
+    FileUtils.rm("#{Dir.home}/.local/share/glib-2.0/schemas/org.gnu.emacs.defaults.gschema.xml")
+
+    # Update caches
+    if system("which gtk-update-icon-cache > /dev/null 2>&1")
+      system "gtk-update-icon-cache", "#{Dir.home}/.local/share/icons/hicolor", "-f",
+             "-t"
+    end
+    if system("which update-desktop-database > /dev/null 2>&1")
+      system "update-desktop-database",
+             "#{Dir.home}/.local/share/applications"
+    end
+  end
 end

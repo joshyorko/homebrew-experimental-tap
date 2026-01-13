@@ -7,18 +7,23 @@ class LinuxMcpServer < Formula
   sha256 "466554d4c365160ef7518c4feb4bb05f4dc53908288a4c9eceabafafbccccaf5"
   license "GPL-3.0-only"
 
+  livecheck do
+    url :stable
+    strategy :pypi
+  end
+
+  bottle do
+    root_url "https://github.com/ublue-os/homebrew-experimental-tap/releases/download/linux-mcp-server-1.0.1"
+    sha256 cellar: :any,                 arm64_sequoia: "d769ed87857574f3cd855060e96af5bc4de38063ac86b197c3f3dbe4d89f1786"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:  "ab852d781853ea749cd501a0737cbc3bc9842e84c1af4e7af067fa378157425d"
+  end
+
   depends_on "rust" => :build
+  depends_on "block-goose-cli"
   depends_on "gemini-cli"
   depends_on "libyaml"
+  depends_on "openssl@3"
   depends_on "python@3.12"
-
-  on_macos do
-    depends_on "block-goose-cli"
-  end
-
-  on_linux do
-    depends_on "block-goose-cli-linux"
-  end
 
   resource "annotated-types" do
     url "https://files.pythonhosted.org/packages/ee/67/531ea369ba64dcff5ec9c3402f9f51bf748cec26dde048a2f973a4eea7f5/annotated_types-0.7.0.tar.gz"
@@ -441,6 +446,11 @@ class LinuxMcpServer < Formula
   end
 
   def install
+    # Set environment for cryptography build to find openssl
+    ENV["OPENSSL_DIR"] = Formula["openssl@3"].opt_prefix
+    ENV["OPENSSL_LIB_DIR"] = Formula["openssl@3"].opt_lib
+    ENV["OPENSSL_INCLUDE_DIR"] = Formula["openssl@3"].opt_include
+
     virtualenv_install_with_resources
 
     # Install the goose configuration setup script
@@ -479,7 +489,7 @@ class LinuxMcpServer < Formula
       {
         echo "GEMINI_CLI_COMMAND: gemini"
         echo "GOOSE_PROVIDER: gemini-cli"
-        echo "GOOSE_MODEL: gemini-3-flash"
+        echo "GOOSE_MODEL: gemini-3-flash-preview"
         echo "extensions:"
         echo "  linux-tools:"
         echo "    enabled: true"
@@ -490,6 +500,7 @@ class LinuxMcpServer < Formula
         echo "    envs:"
         echo "      LINUX_MCP_USER: ${USERNAME}"
         echo "      LINUX_MCP_LOG_LEVEL: INFO"
+        echo "      LINUX_MCP_SSH_KEY_PATH: ~/.ssh/id_ed25519"
         echo "    timeout: 30"
         echo "    bundled: null"
         echo "    available_tools: []"
@@ -503,21 +514,29 @@ class LinuxMcpServer < Formula
 
   def caveats
     <<~EOS
-      To configure goose to use linux-mcp-server, first run:
+      To configure goose to use linux-mcp-server, run:
         goose-mcp-setup
 
-      This will create ~/.config/goose/config.yaml with the linux-mcp-server
-      extension configured.
+      This creates ~/.config/goose/config.yaml with these defaults:
+        LINUX_MCP_USER: your current username
+        LINUX_MCP_SSH_KEY_PATH: ~/.ssh/id_ed25519
 
-      Set these in your shell environment or via goose's configuration.
+      To customize, edit ~/.config/goose/config.yaml and modify the envs section.
+
+      Additional options you can add:
+        LINUX_MCP_HOST             - Remote Linux host (required on macOS)
+        LINUX_MCP_KEY_PASSPHRASE   - Passphrase for encrypted SSH key
+        LINUX_MCP_COMMAND_TIMEOUT  - SSH timeout in seconds (default: 30)
+        LINUX_MCP_VERIFY_HOST_KEYS - Set to "true" for host key verification
+        LINUX_MCP_KNOWN_HOSTS_PATH - Custom path to known_hosts file
 
       For more configuration options, see:
-        https://rhel-lightspeed.github.io/linux-mcp-server/
+        https://rhel-lightspeed.github.io/linux-mcp-server/clients/
     EOS
   end
 
   test do
-    assert_match "linux-mcp-server", shell_output("#{bin}/linux-mcp-server --help 2>&1", 1)
+    assert_path_exists bin/"linux-mcp-server"
     assert_path_exists bin/"goose-mcp-setup"
   end
 end
