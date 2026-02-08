@@ -7,6 +7,11 @@ class Buildstream < Formula
   sha256 "d6f835bab11dda88a3f213441768b1566e21a6c658913f0f0488fcf01a5c23bf"
   license "Apache-2.0"
 
+  bottle do
+    root_url "https://github.com/ublue-os/homebrew-experimental-tap/releases/download/buildstream-2.6.0"
+    sha256 cellar: :any_skip_relocation, x86_64_linux: "21189fbc1cf13e3c3077fa29c48c5b58cb742195f2314bce19b965f45159bb95"
+  end
+
   depends_on "buildbox"
   depends_on "gpatch"
   depends_on :linux
