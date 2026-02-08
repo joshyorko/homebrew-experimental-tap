@@ -5,6 +5,11 @@ class Buildbox < Formula
   sha256 "4b48e97a000c725f326b8c4f78513954360018b4a56612cc453bf2643e8c99d4"
   license "Apache-2.0"
 
+  bottle do
+    root_url "https://github.com/ublue-os/homebrew-experimental-tap/releases/download/buildbox-1.3.52"
+    sha256 x86_64_linux: "08b7ea94659d485713246210b4d5bc83e066767a696cfbf38caa352978056157"
+  end
+
   depends_on "cmake" => :build
   depends_on "nlohmann-json" => :build
   depends_on "pkg-config" => :build
