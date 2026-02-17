@@ -17,7 +17,7 @@ cask "craft-agents-linux" do
   depends_on formula: "squashfs"
 
   binary "squashfs-root/@craft-agentelectron", target: "craft-agents"
-  artifact "squashfs-root/@craft-agentelectron.png",
+  artifact "squashfs-root/usr/share/icons/hicolor/512x512/apps/@craft-agentelectron.png",
            target: "#{Dir.home}/.local/share/icons/hicolor/512x512/apps/@craft-agentelectron.png"
   artifact "squashfs-root/@craft-agentelectron.desktop",
            target: "#{Dir.home}/.local/share/applications/@craft-agentelectron.desktop"
