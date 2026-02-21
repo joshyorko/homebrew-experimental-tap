@@ -59,19 +59,6 @@ cask "emacs-app-linux" do
       FileUtils.ln_sf(relative_path, "#{staged_prefix}/bin/emacs-#{emacs_version}.pdmp")
     end
 
-    # Create symlinks for libgccjit and tree-sitter@0.25 in Homebrew lib dir
-    # so they can be found by emacs' subprocesses (native compilation)
-    FileUtils.mkdir_p "#{HOMEBREW_PREFIX}/lib"
-    libgccjit_path = "#{HOMEBREW_PREFIX}/opt/libgccjit/lib/gcc/current"
-    if File.directory?(libgccjit_path)
-      FileUtils.ln_sf("#{libgccjit_path}/libgccjit.so.0", "#{HOMEBREW_PREFIX}/lib/")
-    end
-
-    tree_sitter_path = "#{HOMEBREW_PREFIX}/opt/tree-sitter@0.25/lib"
-    if File.directory?(tree_sitter_path)
-      FileUtils.ln_sf("#{tree_sitter_path}/libtree-sitter.so.0.25", "#{HOMEBREW_PREFIX}/lib/")
-    end
-
     # Update the run-emacs.sh script to include all necessary Homebrew library paths
     script_path = "#{staged_prefix}/run-emacs.sh"
     content = File.read(script_path)
@@ -79,16 +66,16 @@ cask "emacs-app-linux" do
     # Add tree-sitter and libgccjit paths after the Homebrew lib path check
     homebrew_paths = <<~PATHS
       # Add Homebrew paths if they exist (for systems like immutable distros)
-      if [ -d "#{HOMEBREW_PREFIX}/lib" ]; then
-        export LD_LIBRARY_PATH="#{HOMEBREW_PREFIX}/lib:$LD_LIBRARY_PATH"
+      if [ -d "/home/linuxbrew/.linuxbrew/lib" ]; then
+        export LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/lib:$LD_LIBRARY_PATH"
       fi
       # Add libgccjit (required for native compilation)
-      if [ -d "#{HOMEBREW_PREFIX}/opt/libgccjit/lib/gcc/current" ]; then
-        export LD_LIBRARY_PATH="#{HOMEBREW_PREFIX}/opt/libgccjit/lib/gcc/current:$LD_LIBRARY_PATH"
+      if [ -d "/home/linuxbrew/.linuxbrew/opt/libgccjit/lib/gcc/current" ]; then
+        export LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/opt/libgccjit/lib/gcc/current:$LD_LIBRARY_PATH"
       fi
       # Add tree-sitter@0.25 (keg-only)
-      if [ -d "#{HOMEBREW_PREFIX}/opt/tree-sitter@0.25/lib" ]; then
-        export LD_LIBRARY_PATH="#{HOMEBREW_PREFIX}/opt/tree-sitter@0.25/lib:$LD_LIBRARY_PATH"
+      if [ -d "/home/linuxbrew/.linuxbrew/opt/tree-sitter@0.25/lib" ]; then
+        export LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/opt/tree-sitter@0.25/lib:$LD_LIBRARY_PATH"
       fi
     PATHS
 
@@ -102,11 +89,11 @@ cask "emacs-app-linux" do
       export GSETTINGS_SCHEMA_DIR="$SCRIPT_DIR/share/glib-2.0/schemas"
 
       # Set Emacs data directories (use Homebrew opt path when symlinked)
-      if [ -d "#{HOMEBREW_PREFIX}/opt/emacs-app-linux/share/emacs/#{emacs_version}" ]; then
-        export EMACSDATA="#{HOMEBREW_PREFIX}/opt/emacs-app-linux/share/emacs/#{emacs_version}/etc"
-        export EMACSPATH="#{HOMEBREW_PREFIX}/opt/emacs-app-linux/libexec/emacs/#{emacs_version}/#{target_triplet}"
-        export EMACSDOC="#{HOMEBREW_PREFIX}/opt/emacs-app-linux/share/emacs/#{emacs_version}/etc"
-        export EMACSLOADPATH="#{HOMEBREW_PREFIX}/opt/emacs-app-linux/share/emacs/#{emacs_version}/lisp"
+      if [ -d "/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}" ]; then
+        export EMACSDATA="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}/etc"
+        export EMACSPATH="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/libexec/emacs/#{emacs_version}/#{target_triplet}"
+        export EMACSDOC="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}/etc"
+        export EMACSLOADPATH="/home/linuxbrew/.linuxbrew/opt/emacs-app-linux/share/emacs/#{emacs_version}/lisp"
       else
         export EMACSDATA="$SCRIPT_DIR/share/emacs/#{emacs_version}/etc"
         export EMACSPATH="$SCRIPT_DIR/bin"
@@ -185,25 +172,21 @@ cask "emacs-app-linux" do
   end
 
   uninstall_postflight do
-    # Remove symlinks for libgccjit and tree-sitter@0.25
-    FileUtils.rm_f "#{HOMEBREW_PREFIX}/lib/libgccjit.so.0"
-    FileUtils.rm_f "#{HOMEBREW_PREFIX}/lib/libtree-sitter.so.0.25"
-
     # Clean up desktop files
     %w[emacs emacsclient emacs-mail emacsclient-mail].each do |desktop_name|
-      FileUtils.rm_f("#{Dir.home}/.local/share/applications/#{desktop_name}.desktop")
+      FileUtils.rm("#{Dir.home}/.local/share/applications/#{desktop_name}.desktop")
     end
 
     # Clean up icons
     icon_sizes = %w[16x16 24x24 32x32 48x48 128x128 scalable]
     icon_sizes.each do |size|
       icon_ext = (size == "scalable") ? "svg" : "png"
-      FileUtils.rm_f("#{Dir.home}/.local/share/icons/hicolor/#{size}/apps/emacs.#{icon_ext}")
+      FileUtils.rm("#{Dir.home}/.local/share/icons/hicolor/#{size}/apps/emacs.#{icon_ext}")
     end
 
     # Clean up gschemas
-    FileUtils.rm_f("#{Dir.home}/.local/share/glib-2.0/schemas/gschemas.compiled")
-    FileUtils.rm_f("#{Dir.home}/.local/share/glib-2.0/schemas/org.gnu.emacs.defaults.gschema.xml")
+    FileUtils.rm("#{Dir.home}/.local/share/glib-2.0/schemas/gschemas.compiled")
+    FileUtils.rm("#{Dir.home}/.local/share/glib-2.0/schemas/org.gnu.emacs.defaults.gschema.xml")
 
     # Update caches
     if system("which gtk-update-icon-cache > /dev/null 2>&1")
