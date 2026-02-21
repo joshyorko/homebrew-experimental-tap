@@ -43,11 +43,24 @@ cask "emacs-app-linux" do
            target: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux/libexec"
 
   preflight do
+    emacs_version = version.split("-").first
+    staged_prefix = "#{staged_path}/emacs-pgtk-#{emacs_version}-fedora-latest-#{arch}"
+
     # Make run-emacs.sh executable
-    FileUtils.chmod "+x", "#{staged_path}/emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/run-emacs.sh"
+    FileUtils.chmod "+x", "#{staged_prefix}/run-emacs.sh"
+
+    # Create symlink to pdmp file in bin directory - Emacs automatically finds it there
+    # Emacs looks for {binary-name}.pdmp next to the binary (e.g., emacs-30.2.pdmp)
+    # Using a relative symlink saves ~12MB compared to copying
+    target_triplet = (arch == "arm64") ? "aarch64-unknown-linux-gnu" : "x86_64-pc-linux-gnu"
+    pdmp_source = Dir.glob("#{staged_prefix}/libexec/emacs/#{emacs_version}/#{target_triplet}/*.pdmp").first
+    if pdmp_source
+      relative_path = "../libexec/emacs/#{emacs_version}/#{target_triplet}/#{File.basename(pdmp_source)}"
+      FileUtils.ln_sf(relative_path, "#{staged_prefix}/bin/emacs-#{emacs_version}.pdmp")
+    end
 
     # Update the run-emacs.sh script to include all necessary Homebrew library paths
-    script_path = "#{staged_path}/emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/run-emacs.sh"
+    script_path = "#{staged_prefix}/run-emacs.sh"
     content = File.read(script_path)
 
     # Add tree-sitter and libgccjit paths after the Homebrew lib path check
@@ -72,9 +85,6 @@ cask "emacs-app-linux" do
     )
 
     # Add Emacs data directory environment variables after the GSETTINGS_SCHEMA_DIR line
-    emacs_version = version.split("-").first
-    # ARM64 uses aarch64-unknown-linux-gnu, x86_64 uses x86_64-pc-linux-gnu
-    target_triplet = on_arch_conditional arm: "aarch64-unknown-linux-gnu", intel: "x86_64-pc-linux-gnu"
     emacs_env_vars = <<~ENVVARS
       export GSETTINGS_SCHEMA_DIR="$SCRIPT_DIR/share/glib-2.0/schemas"
 
