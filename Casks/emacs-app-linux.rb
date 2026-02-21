@@ -1,5 +1,5 @@
 cask "emacs-app-linux" do
-  arch arm: "arm64", intel: "amd64"
+  arch arm: "arm64", intel: "x64"
 
   version "30.2-18"
   sha256 arm64_linux:  "d2471179e3a7691148a585c04c573a9dc95ee26b448624f4a8131d73c2234698",
@@ -13,7 +13,8 @@ cask "emacs-app-linux" do
 
   livecheck do
     url :url
-    regex(/^emacs-pgtk[._-]v?(\d+(?:\.\d+)+-\d+)$/i)
+    regex(/emacs-pgtk[._-]v?(\d+(?:\.\d+)+-\d+)/i)
+    strategy :extract_longest_version
   end
 
   depends_on formula: "libgccjit"
@@ -41,6 +42,12 @@ cask "emacs-app-linux" do
   # Libexec (helper binaries and compiled modules)
   artifact "emacs-pgtk-#{version.split("-").first}-fedora-latest-#{arch}/libexec",
            target: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux/libexec"
+
+  # Clean up old symlinks before upgrade
+  uninstall_preflight do
+    FileUtils.rm_f "#{HOMEBREW_PREFIX}/lib/libgccjit.so.0"
+    FileUtils.rm_f "#{HOMEBREW_PREFIX}/lib/libtree-sitter.so.0.25"
+  end
 
   preflight do
     emacs_version = version.split("-").first
@@ -183,6 +190,22 @@ cask "emacs-app-linux" do
              "#{Dir.home}/.local/share/applications"
     end
   end
+
+  # Properly remove the keg directory and all symlinks
+  uninstall delete: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux"
+  # Remove bin symlinks
+  uninstall delete: "#{HOMEBREW_PREFIX}/bin/emacs"
+  uninstall delete: "#{HOMEBREW_PREFIX}/bin/emacs-#{version.split("-").first}"
+  uninstall delete: "#{HOMEBREW_PREFIX}/bin/emacsclient"
+  uninstall delete: "#{HOMEBREW_PREFIX}/bin/ctags"
+  uninstall delete: "#{HOMEBREW_PREFIX}/bin/ebrowse"
+  uninstall delete: "#{HOMEBREW_PREFIX}/bin/etags"
+  # Remove manpage symlinks
+  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/emacs.1.gz"
+  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/emacsclient.1.gz"
+  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/ctags.1.gz"
+  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/ebrowse.1.gz"
+  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/etags.1.gz"
 
   uninstall_postflight do
     # Remove symlinks for libgccjit and tree-sitter@0.25
