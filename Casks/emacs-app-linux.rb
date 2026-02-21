@@ -192,20 +192,22 @@ cask "emacs-app-linux" do
   end
 
   # Properly remove the keg directory and all symlinks
-  uninstall delete: "#{HOMEBREW_PREFIX}/opt/emacs-app-linux"
-  # Remove bin symlinks
-  uninstall delete: "#{HOMEBREW_PREFIX}/bin/emacs"
-  uninstall delete: "#{HOMEBREW_PREFIX}/bin/emacs-#{version.split("-").first}"
-  uninstall delete: "#{HOMEBREW_PREFIX}/bin/emacsclient"
-  uninstall delete: "#{HOMEBREW_PREFIX}/bin/ctags"
-  uninstall delete: "#{HOMEBREW_PREFIX}/bin/ebrowse"
-  uninstall delete: "#{HOMEBREW_PREFIX}/bin/etags"
-  # Remove manpage symlinks
-  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/emacs.1.gz"
-  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/emacsclient.1.gz"
-  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/ctags.1.gz"
-  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/ebrowse.1.gz"
-  uninstall delete: "#{HOMEBREW_PREFIX}/share/man/man1/etags.1.gz"
+  uninstall delete: [
+    "#{HOMEBREW_PREFIX}/opt/emacs-app-linux",
+    # Remove bin symlinks
+    "#{HOMEBREW_PREFIX}/bin/emacs",
+    "#{HOMEBREW_PREFIX}/bin/emacs-#{version.split("-").first}",
+    "#{HOMEBREW_PREFIX}/bin/emacsclient",
+    "#{HOMEBREW_PREFIX}/bin/ctags",
+    "#{HOMEBREW_PREFIX}/bin/ebrowse",
+    "#{HOMEBREW_PREFIX}/bin/etags",
+    # Remove manpage symlinks
+    "#{HOMEBREW_PREFIX}/share/man/man1/emacs.1.gz",
+    "#{HOMEBREW_PREFIX}/share/man/man1/emacsclient.1.gz",
+    "#{HOMEBREW_PREFIX}/share/man/man1/ctags.1.gz",
+    "#{HOMEBREW_PREFIX}/share/man/man1/ebrowse.1.gz",
+    "#{HOMEBREW_PREFIX}/share/man/man1/etags.1.gz",
+  ]
 
   uninstall_postflight do
     # Remove symlinks for libgccjit and tree-sitter@0.25
